@@ -126,45 +126,53 @@ func makeHTTPListener(listenerName, route string) *listener.Listener {
 
 	return &listener.Listener{
 		Name: listenerName,
-		Address: &core.Address{
-			Address: &core.Address_SocketAddress{
-				SocketAddress: &core.SocketAddress{
-					Protocol: core.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &core.SocketAddress_PortValue{
-						PortValue: ListenerPort,
-					},
-				},
-			},
+		ApiListener: &listener.ApiListener{
+			ApiListener: pbst,
 		},
-		FilterChains: []*listener.FilterChain{{
-			Filters: []*listener.Filter{{
-				Name: "http-connection-manager",
-				ConfigType: &listener.Filter_TypedConfig{
-					TypedConfig: pbst,
-				},
-			}},
-		}},
+
+
+		// Address: &core.Address{
+		// 	Address: &core.Address_SocketAddress{
+		// 		SocketAddress: &core.SocketAddress{
+		// 			Protocol: core.SocketAddress_TCP,
+		// 			Address:  "0.0.0.0",
+		// 			PortSpecifier: &core.SocketAddress_PortValue{
+		// 				PortValue: ListenerPort,
+		// 			},
+		// 		},
+		// 	},
+		// },
+		// FilterChains: []*listener.FilterChain{{
+		// 	Filters: []*listener.Filter{{
+		// 		Name: "http-connection-manager",
+		// 		ConfigType: &listener.Filter_TypedConfig{
+		// 			TypedConfig: pbst,
+		// 		},
+		// 	}},
+		// }},
 	}
 }
 
 func makeConfigSource() *core.ConfigSource {
 	source := &core.ConfigSource{}
 	source.ResourceApiVersion = resource.DefaultAPIVersion
-	source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
-		ApiConfigSource: &core.ApiConfigSource{
-			TransportApiVersion:       resource.DefaultAPIVersion,
-			ApiType:                   core.ApiConfigSource_GRPC,
-			SetNodeOnFirstMessageOnly: true,
-			GrpcServices: []*core.GrpcService{{
-				TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-					EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
-				},
-			}},
-		},
-	}
+	source.ConfigSourceSpecifier = &core.ConfigSource_Ads{}
+	// source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
+	// 	ApiConfigSource: &core.ApiConfigSource{
+	// 		TransportApiVersion:       resource.DefaultAPIVersion,
+	// 		ApiType:                   core.ApiConfigSource_GRPC,
+	// 		SetNodeOnFirstMessageOnly: true,
+	// 		GrpcServices: []*core.GrpcService{{
+	// 			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+	// 				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
+	// 			},
+	// 		}},
+	// 	},
+	// }
 	return source
 }
+
+
 
 func GenerateSnapshot(upstreamHost string, upstreamPort uint32) *cache.Snapshot {
 	snap, _ := cache.NewSnapshot("1",

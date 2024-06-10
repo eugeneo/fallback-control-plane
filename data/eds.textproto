@@ -1,0 +1,31 @@
+version_info: "1"
+resources {
+  [type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment] {
+    cluster_name: "eds_service_name"
+    endpoints {
+      locality {
+        region: "xds_default_locality_region"
+        zone: "xds_default_locality_zone"
+        sub_zone: "locality0"
+      }
+      lb_endpoints {
+        endpoint {
+          address {
+            socket_address {
+              address: "127.0.0.1"
+              port_value: 8292
+            }
+          }
+        }
+        load_balancing_weight {
+          value: 1
+        }
+      }
+      load_balancing_weight {
+        value: 3
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+nonce: "1"

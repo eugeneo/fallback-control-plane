@@ -1,0 +1,46 @@
+version_info: "3"
+resources {
+  [type.googleapis.com/envoy.config.listener.v3.Listener] {
+    name: "grpc/server?xds.resource.listening_address=127.0.0.1:4908"
+    address {
+      socket_address {
+        address: "127.0.0.1"
+        port_value: 4908
+      }
+    }
+    default_filter_chain {
+      filters {
+        typed_config {
+          [type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager] {
+            rds {
+              config_source {
+                self {
+                }
+              }
+              route_config_name: "default_server_route_config_name"
+            }
+            http_filters {
+              name: "rbac1"
+              typed_config {
+                [type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC] {
+                  rules {
+                    action: DENY
+                  }
+                }
+              }
+            }
+            http_filters {
+              name: "router"
+              typed_config {
+                [type.googleapis.com/envoy.extensions.filters.http.router.v3.Router] {
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+nonce: "2"

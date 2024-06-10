@@ -1,0 +1,69 @@
+version_info: "3"
+resources {
+  [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
+    name: "default_server_route_config_name"
+    virtual_hosts {
+      domains: "*"
+      routes {
+        match {
+          prefix: ""
+        }
+        non_forwarding_action {
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+nonce: "1"
+
+---
+version_info: "3"
+resources {
+  [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
+    name: "default_server_route_config_name"
+    virtual_hosts {
+      domains: "*"
+      routes {
+        match {
+          prefix: ""
+        }
+        typed_per_filter_config {
+          key: "rbac1"
+          value {
+            [type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBACPerRoute] {
+              rbac {
+                rules {
+                  action: DENY
+                  policies {
+                    key: "policy"
+                    value {
+                      permissions {
+                        and_rules {
+                          rules {
+                            any: true
+                          }
+                          rules {
+                            destination_port: 3470
+                          }
+                        }
+                      }
+                      principals {
+                        any: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        non_forwarding_action {
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+nonce: "1"
+

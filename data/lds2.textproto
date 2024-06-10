@@ -1,0 +1,62 @@
+version_info: "3"
+resources {
+  [type.googleapis.com/envoy.config.listener.v3.Listener] {
+    name: "grpc/server?xds.resource.listening_address=127.0.0.1:1876"
+    address {
+      socket_address {
+        address: "127.0.0.1"
+        port_value: 1876
+      }
+    }
+    default_filter_chain {
+      filters {
+        typed_config {
+          [type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager] {
+            route_config {
+              name: "default_server_route_config_name"
+              virtual_hosts {
+                domains: "*"
+                routes {
+                  match {
+                    prefix: ""
+                  }
+                  non_forwarding_action {
+                  }
+                }
+              }
+            }
+            http_filters {
+              name: "router"
+              typed_config {
+                [type.googleapis.com/envoy.extensions.filters.http.router.v3.Router] {
+                }
+              }
+            }
+          }
+        }
+      }
+      transport_socket {
+        name: "envoy.transport_sockets.tls"
+        typed_config {
+          [type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] {
+            common_tls_context {
+              validation_context {
+                ca_certificate_provider_instance {
+                  instance_name: "fake_plugin1"
+                }
+              }
+              tls_certificate_provider_instance {
+                instance_name: "fake_plugin1"
+              }
+            }
+            require_client_certificate {
+              value: true
+            }
+          }
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+nonce: "2"

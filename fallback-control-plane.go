@@ -10,18 +10,19 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/test/v3"
-	envoy "github.com/eugeneo/fallback-control-plane/envoy"
+	example "github.com/eugeneo/fallback-control-plane/envoy"
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 var (
-	l        envoy.Logger
+	l        example.Logger
 	port     uint
 	nodeID   string
 	upstream = flag.String("upstream", "localhost:3000", "upstream server")
 )
 
 func init() {
-	l = envoy.Logger{}
+	l = example.Logger{}
 
 	flag.BoolVar(&l.Debug, "debug", false, "Enable xDS server debug logging")
 
@@ -34,9 +35,6 @@ func init() {
 
 func main() {
 	flag.Parse()
-
-	// Create a cache
-	cache := cache.NewSnapshotCache(false, cache.IDHash{}, l)
 	sep := strings.LastIndex(*upstream, ":")
 	if sep < 0 {
 		l.Errorf("Incorrect upstream host name: %+v", upstream)
@@ -47,14 +45,39 @@ func main() {
 		l.Errorf("Bad upstream port: %+v\n%+v", (*upstream)[sep+1:], err)
 		os.Exit(1)
 	}
+
 	// Create the snapshot that we'll serve to Envoy
-	snapshot := envoy.GenerateSnapshot((*upstream)[:sep], uint32(upstreamPort))
+	snapshot := example.GenerateSnapshot((*upstream)[:sep], uint32(upstreamPort))
 	if err := snapshot.Consistent(); err != nil {
-		l.Errorf("snapshot inconsistency: %+v\n%+v", snapshot, err)
+		l.Errorf("snapshot inconsistency: %+v", err)
+		for _, r := range snapshot.Resources {
+			for name, resource := range r.Items {
+				bytes, err := prototext.MarshalOptions{Multiline: true}.Marshal(resource.Resource)
+				if err != nil {
+					l.Errorf("Can't marshal %s", name)
+				} else {
+					l.Errorf("Resource: %s\n%s",
+						resource.Resource,
+						string(bytes))
+				}
+			}
+		}
 		os.Exit(1)
 	}
-	l.Debugf("will serve snapshot %+v", snapshot)
+	l.Debugf("will serve snapshot:")
+	for _, values := range snapshot.Resources {
+		for name, item := range values.Items {
+			text, err := prototext.MarshalOptions{Multiline: true}.Marshal(item.Resource)
+			if err != nil {
+				l.Errorf("Resource %+v, error: %+v", name, err)
+			} else {
+				l.Debugf("%+v => %+v", name, string(text))
+			}
+		}
+	}
 
+	// Create a cache
+	cache := cache.NewSnapshotCache(false, cache.IDHash{}, l)
 	// Add the snapshot to the cache
 	if err := cache.SetSnapshot(context.Background(), nodeID, snapshot); err != nil {
 		l.Errorf("snapshot error %q for %+v", err, snapshot)
@@ -65,5 +88,5 @@ func main() {
 	ctx := context.Background()
 	cb := &test.Callbacks{Debug: l.Debug}
 	srv := server.NewServer(ctx, cache, cb)
-	envoy.RunServer(srv, port)
+	example.RunServer(srv, port)
 }

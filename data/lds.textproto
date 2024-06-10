@@ -1,0 +1,35 @@
+version_info: "1"
+resources {
+  [type.googleapis.com/envoy.config.listener.v3.Listener] {
+    name: "server.example.com"
+    api_listener {
+      api_listener {
+        [type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager] {
+          route_config {
+            name: "route_config_name"
+            virtual_hosts {
+              domains: "*"
+              routes {
+                match {
+                  prefix: ""
+                }
+                route {
+                  cluster: "cluster_name"
+                }
+              }
+            }
+          }
+          http_filters {
+            name: "router"
+            typed_config {
+              [type.googleapis.com/envoy.extensions.filters.http.router.v3.Router] {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+nonce: "1"

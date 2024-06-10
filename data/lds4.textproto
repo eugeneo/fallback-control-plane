@@ -1,0 +1,68 @@
+version_info: "4"
+resources {
+  [type.googleapis.com/envoy.config.listener.v3.Listener] {
+    name: "grpc/server?xds.resource.listening_address=127.0.0.1:23402"
+    address {
+      socket_address {
+        address: "127.0.0.1"
+        port_value: 23402
+      }
+    }
+    default_filter_chain {
+      filters {
+        typed_config {
+          [type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager] {
+            route_config {
+              name: "default_server_route_config_name"
+              virtual_hosts {
+                domains: "*"
+                routes {
+                  match {
+                    prefix: ""
+                  }
+                  non_forwarding_action {
+                  }
+                }
+              }
+            }
+            http_filters {
+              name: "rbac1"
+              typed_config {
+                [type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC] {
+                  rules {
+                    action: DENY
+                    policies {
+                      key: "policy"
+                      value {
+                        permissions {
+                          any: true
+                        }
+                        principals {
+                          remote_ip {
+                            address_prefix: "127.0.0.2"
+                            prefix_len {
+                              value: 32
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            http_filters {
+              name: "router"
+              typed_config {
+                [type.googleapis.com/envoy.extensions.filters.http.router.v3.Router] {
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+nonce: "3"
