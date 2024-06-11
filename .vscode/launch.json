@@ -15,7 +15,7 @@
         "-port",
         "9000",
         "-upstream",
-        "localhost:3333"
+        "host.docker.internal:3333"
       ]
     }
   ]
