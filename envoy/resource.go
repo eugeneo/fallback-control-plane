@@ -34,9 +34,7 @@ import (
 
 const (
 	ClusterName  = "example_proxy_cluster"
-	RouteName    = "local_route"
 	ListenerName = "listener_0"
-	ListenerPort = 10000
 )
 
 func makeCluster(clusterName, upstreamHost string, upstreamPort uint32) *cluster.Cluster {
@@ -83,7 +81,6 @@ func makeHTTPListener(listenerName, cluster string) *listener.Listener {
 	httpcm := &hcm.HttpConnectionManager{
 		RouteSpecifier: &hcm.HttpConnectionManager_RouteConfig{
 			RouteConfig: &route.RouteConfiguration{
-				Name: "route_config_name",
 				VirtualHosts: []*route.VirtualHost{
 					{
 						Domains: []string{"*"},
