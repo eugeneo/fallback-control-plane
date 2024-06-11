@@ -75,111 +75,62 @@ func makeEndpoint(clusterName, upstreamHost string, upstreamPort uint32) *endpoi
 	}
 }
 
-func makeRoute(routeName, clusterName, upstreamHost string) *route.RouteConfiguration {
-	return &route.RouteConfiguration{
-		Name: routeName,
-		VirtualHosts: []*route.VirtualHost{{
-			Name:    "local_service",
-			Domains: []string{"*"},
-			Routes: []*route.Route{{
-				Match: &route.RouteMatch{
-					PathSpecifier: &route.RouteMatch_Prefix{
-						Prefix: "/",
-					},
-				},
-				Action: &route.Route_Route{
-					Route: &route.RouteAction{
-						ClusterSpecifier: &route.RouteAction_Cluster{
-							Cluster: clusterName,
-						},
-						HostRewriteSpecifier: &route.RouteAction_HostRewriteLiteral{
-							HostRewriteLiteral: upstreamHost,
-						},
-					},
-				},
-			}},
-		}},
-	}
-}
-
-func makeHTTPListener(listenerName, route string) *listener.Listener {
-	routerConfig, _ := anypb.New(&router.Router{})
-	// HTTP filter configuration
-	manager := &hcm.HttpConnectionManager{
-		CodecType:  hcm.HttpConnectionManager_AUTO,
-		StatPrefix: "http",
-		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
-			Rds: &hcm.Rds{
-				ConfigSource:    makeConfigSource(),
-				RouteConfigName: route,
-			},
-		},
-		HttpFilters: []*hcm.HttpFilter{{
-			Name:       "http-router",
-			ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: routerConfig},
-		}},
-	}
-	pbst, err := anypb.New(manager)
+func makeHTTPListener(listenerName, cluster string) *listener.Listener {
+	any_route, err := anypb.New(&router.Router{})
 	if err != nil {
 		panic(err)
 	}
-
+	httpcm := &hcm.HttpConnectionManager{
+		RouteSpecifier: &hcm.HttpConnectionManager_RouteConfig{
+			RouteConfig: &route.RouteConfiguration{
+				Name: "route_config_name",
+				VirtualHosts: []*route.VirtualHost{
+					{
+						Domains: []string{"*"},
+						Routes: []*route.Route{
+							{
+								Match: &route.RouteMatch{
+									PathSpecifier: &route.RouteMatch_Prefix{},
+								},
+								Action: &route.Route_Route{
+									Route: &route.RouteAction{
+										ClusterSpecifier: &route.RouteAction_Cluster{
+											Cluster: cluster,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		HttpFilters: []*hcm.HttpFilter{
+			{
+				Name: "router",
+				ConfigType: &hcm.HttpFilter_TypedConfig{
+					TypedConfig: any_route,
+				},
+			},
+		},
+	}
+	any_hcm, err := anypb.New(httpcm)
+	if err != nil {
+		panic(err)
+	}
 	return &listener.Listener{
 		Name: listenerName,
 		ApiListener: &listener.ApiListener{
-			ApiListener: pbst,
+			ApiListener: any_hcm,
 		},
-
-
-		// Address: &core.Address{
-		// 	Address: &core.Address_SocketAddress{
-		// 		SocketAddress: &core.SocketAddress{
-		// 			Protocol: core.SocketAddress_TCP,
-		// 			Address:  "0.0.0.0",
-		// 			PortSpecifier: &core.SocketAddress_PortValue{
-		// 				PortValue: ListenerPort,
-		// 			},
-		// 		},
-		// 	},
-		// },
-		// FilterChains: []*listener.FilterChain{{
-		// 	Filters: []*listener.Filter{{
-		// 		Name: "http-connection-manager",
-		// 		ConfigType: &listener.Filter_TypedConfig{
-		// 			TypedConfig: pbst,
-		// 		},
-		// 	}},
-		// }},
 	}
 }
-
-func makeConfigSource() *core.ConfigSource {
-	source := &core.ConfigSource{}
-	source.ResourceApiVersion = resource.DefaultAPIVersion
-	source.ConfigSourceSpecifier = &core.ConfigSource_Ads{}
-	// source.ConfigSourceSpecifier = &core.ConfigSource_ApiConfigSource{
-	// 	ApiConfigSource: &core.ApiConfigSource{
-	// 		TransportApiVersion:       resource.DefaultAPIVersion,
-	// 		ApiType:                   core.ApiConfigSource_GRPC,
-	// 		SetNodeOnFirstMessageOnly: true,
-	// 		GrpcServices: []*core.GrpcService{{
-	// 			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-	// 				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{ClusterName: "xds_cluster"},
-	// 			},
-	// 		}},
-	// 	},
-	// }
-	return source
-}
-
-
 
 func GenerateSnapshot(upstreamHost string, upstreamPort uint32) *cache.Snapshot {
 	snap, _ := cache.NewSnapshot("1",
 		map[resource.Type][]types.Resource{
 			resource.ClusterType:  {makeCluster(ClusterName, upstreamHost, upstreamPort)},
-			resource.RouteType:    {makeRoute(RouteName, ClusterName, upstreamHost)},
-			resource.ListenerType: {makeHTTPListener(ListenerName, RouteName)},
+			resource.ListenerType: {makeHTTPListener(ListenerName, ClusterName)},
 		},
 	)
 	return snap
