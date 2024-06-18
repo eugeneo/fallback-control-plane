@@ -16,21 +16,14 @@ import (
 
 var (
 	l        example.Logger
-	port     uint
-	nodeID   string
+	port     = flag.Uint("port", 3333, "Port to listen on")
+	nodeID   = flag.String("node", "test-id", "Node ID")
 	upstream = flag.String("upstream", "localhost:3000", "upstream server")
 )
 
 func init() {
 	l = example.Logger{}
-
 	flag.BoolVar(&l.Debug, "debug", false, "Enable xDS server debug logging")
-
-	// The port that this xDS server listens on
-	flag.UintVar(&port, "port", 18000, "xDS management server port")
-
-	// Tell Envoy to use this Node ID
-	flag.StringVar(&nodeID, "nodeID", "test-id", "Node ID")
 }
 
 func main() {
@@ -79,7 +72,7 @@ func main() {
 	// Create a cache
 	cache := cache.NewSnapshotCache(false, cache.IDHash{}, l)
 	// Add the snapshot to the cache
-	if err := cache.SetSnapshot(context.Background(), nodeID, snapshot); err != nil {
+	if err := cache.SetSnapshot(context.Background(), *nodeID, snapshot); err != nil {
 		l.Errorf("snapshot error %q for %+v", err, snapshot)
 		os.Exit(1)
 	}
@@ -88,5 +81,5 @@ func main() {
 	ctx := context.Background()
 	cb := &test.Callbacks{Debug: l.Debug}
 	srv := server.NewServer(ctx, cache, cb)
-	example.RunServer(srv, port)
+	example.RunServer(srv, *port)
 }
