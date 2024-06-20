@@ -11,4 +11,4 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -v -o /usr/local/bin/fallback-control-plane .
 
-CMD ["fallback-control-plane", "-debug"]
+ENTRYPOINT ["fallback-control-plane", "-debug"]
