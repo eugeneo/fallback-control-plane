@@ -25,6 +25,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
+	cs "github.com/eugeneo/fallback-control-plane/grpc/interop/grpc_testing/xdsconfig"
+
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
@@ -108,7 +110,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 }
 
 // RunServer starts an xDS server at the given port.
-func RunServer(srv server.Server, port uint) {
+func RunServer(srv server.Server, controlService cs.XdsConfigControlServiceServer, port uint) {
 	// gRPC golang library sets a very small upper bound for the number gRPC/h2
 	// streams over a single TCP connection. If a proxy multiplexes requests over
 	// a single connection to the management server, then it might lead to
@@ -127,13 +129,12 @@ func RunServer(srv server.Server, port uint) {
 	)
 	grpcServer := grpc.NewServer(grpcOptions...)
 	reflection.Register(grpcServer)
+	cs.RegisterXdsConfigControlServiceServer(grpcServer, controlService)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	registerServer(grpcServer, srv)
-
 	log.Printf("management server listening on %d\n", port)
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Println(err)

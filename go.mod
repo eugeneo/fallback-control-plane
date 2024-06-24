@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/envoyproxy/go-control-plane v0.12.0
 	google.golang.org/grpc v1.64.0
-	google.golang.org/protobuf v1.34.1
+	google.golang.org/protobuf v1.34.2
 )
 
 require (

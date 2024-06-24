@@ -7,9 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	cs "github.com/eugeneo/fallback-control-plane/grpc/interop/grpc_testing/xdsconfig"
+	"github.com/eugeneo/fallback-control-plane/testcontrolplane"
+
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/test/v3"
 	example "github.com/eugeneo/fallback-control-plane/envoy"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -24,6 +26,20 @@ var (
 func init() {
 	l = example.Logger{}
 	flag.BoolVar(&l.Debug, "debug", false, "Enable xDS server debug logging")
+}
+
+type ControlService struct {
+	cs.UnsafeXdsConfigControlServiceServer
+	Cb *testcontrolplane.Callbacks
+}
+
+func (srv *ControlService) StopOnRequest(_ context.Context, req *cs.StopOnRequestRequest) (*cs.StopOnRequestResponse, error) {
+	srv.Cb.AddFilter(req.GetResourceType(), req.GetResourceName())
+	res := cs.StopOnRequestResponse{}
+	for _, f := range srv.Cb.GetFilters() {
+		res.Filters = append(res.Filters, &cs.StopOnRequestResponse_ResourceFilter{ResourceType: f.ResourceType, ResourceName: f.ResourceName})
+	}
+	return &res, nil
 }
 
 func main() {
@@ -79,7 +95,8 @@ func main() {
 
 	// Run the xDS server
 	ctx := context.Background()
-	cb := &test.Callbacks{Debug: l.Debug}
+	cb := &testcontrolplane.Callbacks{Debug: l.Debug, Filters: make(map[string]map[string]bool)}
+	controlService := &ControlService{Cb: cb}
 	srv := server.NewServer(ctx, cache, cb)
-	example.RunServer(srv, *port)
+	example.RunServer(srv, controlService, *port)
 }
