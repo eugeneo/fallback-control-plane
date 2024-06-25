@@ -3,6 +3,7 @@ package testcontrolplane
 import (
 	"context"
 	"log"
+	"os"
 	"sync"
 
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -65,7 +66,15 @@ func (cb *Callbacks) OnStreamRequest(id int64, req *discovery.DiscoveryRequest) 
 	if cb.Debug {
 		log.Printf("received request for %s on stream %d: %v:%v", req.GetTypeUrl(), id, req.VersionInfo, req.ResourceNames)
 	}
-
+	filtered := cb.Filters[req.GetTypeUrl()]
+	if filtered != nil {
+		for _, name := range req.ResourceNames {
+			if filtered[name] {
+				log.Printf("Self destructing: %s/%s", req.GetTypeUrl(), name)
+				os.Exit(0)
+			}
+		}
+	}
 	return nil
 }
 
