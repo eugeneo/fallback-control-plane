@@ -33,7 +33,8 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	XdsConfigControlService_StopOnRequest_FullMethodName = "/grpc.testing.xdsconfig.XdsConfigControlService/StopOnRequest"
+	XdsConfigControlService_StopOnRequest_FullMethodName   = "/grpc.testing.xdsconfig.XdsConfigControlService/StopOnRequest"
+	XdsConfigControlService_UpsertResources_FullMethodName = "/grpc.testing.xdsconfig.XdsConfigControlService/UpsertResources"
 )
 
 // XdsConfigControlServiceClient is the client API for XdsConfigControlService service.
@@ -41,6 +42,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type XdsConfigControlServiceClient interface {
 	StopOnRequest(ctx context.Context, in *StopOnRequestRequest, opts ...grpc.CallOption) (*StopOnRequestResponse, error)
+	UpsertResources(ctx context.Context, in *UpsertResourcesRequest, opts ...grpc.CallOption) (*UpsertResourcesResponse, error)
 }
 
 type xdsConfigControlServiceClient struct {
@@ -61,11 +63,22 @@ func (c *xdsConfigControlServiceClient) StopOnRequest(ctx context.Context, in *S
 	return out, nil
 }
 
+func (c *xdsConfigControlServiceClient) UpsertResources(ctx context.Context, in *UpsertResourcesRequest, opts ...grpc.CallOption) (*UpsertResourcesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertResourcesResponse)
+	err := c.cc.Invoke(ctx, XdsConfigControlService_UpsertResources_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // XdsConfigControlServiceServer is the server API for XdsConfigControlService service.
 // All implementations must embed UnimplementedXdsConfigControlServiceServer
 // for forward compatibility
 type XdsConfigControlServiceServer interface {
 	StopOnRequest(context.Context, *StopOnRequestRequest) (*StopOnRequestResponse, error)
+	UpsertResources(context.Context, *UpsertResourcesRequest) (*UpsertResourcesResponse, error)
 	mustEmbedUnimplementedXdsConfigControlServiceServer()
 }
 
@@ -75,6 +88,9 @@ type UnimplementedXdsConfigControlServiceServer struct {
 
 func (UnimplementedXdsConfigControlServiceServer) StopOnRequest(context.Context, *StopOnRequestRequest) (*StopOnRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopOnRequest not implemented")
+}
+func (UnimplementedXdsConfigControlServiceServer) UpsertResources(context.Context, *UpsertResourcesRequest) (*UpsertResourcesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertResources not implemented")
 }
 func (UnimplementedXdsConfigControlServiceServer) mustEmbedUnimplementedXdsConfigControlServiceServer() {
 }
@@ -108,6 +124,24 @@ func _XdsConfigControlService_StopOnRequest_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _XdsConfigControlService_UpsertResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertResourcesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(XdsConfigControlServiceServer).UpsertResources(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: XdsConfigControlService_UpsertResources_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(XdsConfigControlServiceServer).UpsertResources(ctx, req.(*UpsertResourcesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // XdsConfigControlService_ServiceDesc is the grpc.ServiceDesc for XdsConfigControlService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +152,10 @@ var XdsConfigControlService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopOnRequest",
 			Handler:    _XdsConfigControlService_StopOnRequest_Handler,
+		},
+		{
+			MethodName: "UpsertResources",
+			Handler:    _XdsConfigControlService_UpsertResources_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

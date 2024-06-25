@@ -37,7 +37,7 @@ const (
 	ListenerName = "listener_0"
 )
 
-func makeCluster(clusterName, upstreamHost string, upstreamPort uint32) *cluster.Cluster {
+func MakeCluster(clusterName, upstreamHost string, upstreamPort uint32) *cluster.Cluster {
 	return &cluster.Cluster{
 		Name:                 clusterName,
 		ConnectTimeout:       durationpb.New(5 * time.Second),
@@ -73,7 +73,7 @@ func makeEndpoint(clusterName, upstreamHost string, upstreamPort uint32) *endpoi
 	}
 }
 
-func makeHTTPListener(listenerName, cluster string) *listener.Listener {
+func MakeHTTPListener(listenerName, cluster string) *listener.Listener {
 	any_route, err := anypb.New(&router.Router{})
 	if err != nil {
 		panic(err)
@@ -123,12 +123,14 @@ func makeHTTPListener(listenerName, cluster string) *listener.Listener {
 	}
 }
 
+func BuildResources(listener, cluster, upstreamHost string, upstreamPort uint32) map[resource.Type][]types.Resource {
+	return map[resource.Type][]types.Resource{
+		resource.ClusterType:  {MakeCluster(cluster, upstreamHost, upstreamPort)},
+		resource.ListenerType: {MakeHTTPListener(listener, cluster)},
+	}
+}
+
 func GenerateSnapshot(upstreamHost string, upstreamPort uint32) *cache.Snapshot {
-	snap, _ := cache.NewSnapshot("1",
-		map[resource.Type][]types.Resource{
-			resource.ClusterType:  {makeCluster(ClusterName, upstreamHost, upstreamPort)},
-			resource.ListenerType: {makeHTTPListener(ListenerName, ClusterName)},
-		},
-	)
+	snap, _ := cache.NewSnapshot("1", BuildResources(ListenerName, ClusterName, upstreamHost, upstreamPort))
 	return snap
 }
