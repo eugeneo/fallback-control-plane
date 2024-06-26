@@ -20,6 +20,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	example "github.com/eugeneo/fallback-control-plane/envoy"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var (
@@ -39,7 +40,7 @@ type ControlService struct {
 	version   uint32
 	clusters  map[string]*cluster.Cluster
 	listeners map[string]*listener.Listener
-	cache cache.SnapshotCache
+	cache     cache.SnapshotCache
 	Cb        *testcontrolplane.Callbacks
 	mu        sync.Mutex
 }
@@ -64,12 +65,27 @@ func (srv *ControlService) UpsertResources(_ context.Context, req *cs.UpsertReso
 	srv.clusters[req.Cluster] = example.MakeCluster(req.Cluster, req.UpstreamHost, req.UpstreamPort)
 	srv.listeners[listener] = example.MakeHTTPListener(listener, req.Cluster)
 	snapshot, err := srv.MakeSnapshot()
-	if (err != nil) {
+	if err != nil {
 		l.Errorf("snapshot inconsistency: %+v", err)
 		return nil, err
 	}
 	srv.cache.SetSnapshot(context.Background(), *nodeID, snapshot)
-	return &cs.UpsertResourcesResponse{}, nil
+	res := &cs.UpsertResourcesResponse{}
+	for _, l := range srv.listeners {
+		a, err := anypb.New(l)
+		if err != nil {
+			panic(err)
+		}
+		res.Resource = append(res.Resource, a)
+	}
+	for _, c := range srv.clusters {
+		a, err := anypb.New(c)
+		if err != nil {
+			panic(err)
+		}
+		res.Resource = append(res.Resource, a)
+	}
+	return res, nil
 }
 
 func (srv *ControlService) MakeSnapshot() (*cache.Snapshot, error) {
@@ -138,7 +154,7 @@ func main() {
 	controlService := &ControlService{Cb: cb, version: 1,
 		clusters:  map[string]*cluster.Cluster{example.ListenerName: example.MakeCluster(example.ClusterName, (*upstream)[:sep], uint32(upstreamPort))},
 		listeners: map[string]*listener.Listener{example.ListenerName: example.MakeHTTPListener(example.ListenerName, example.ClusterName)},
-		cache: cache.NewSnapshotCache(false, cache.IDHash{}, l),
+		cache:     cache.NewSnapshotCache(false, cache.IDHash{}, l),
 	}
 	// Create a cache
 	snapshot, err := controlService.MakeSnapshot()

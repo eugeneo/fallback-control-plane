@@ -16,7 +16,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.4.0
 // - protoc             v3.21.12
-// source: control.proto
+// source: protos/grpc/testing/xdsconfig/service.proto
 
 package xdsconfig
 
@@ -159,5 +159,5 @@ var XdsConfigControlService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "control.proto",
+	Metadata: "protos/grpc/testing/xdsconfig/service.proto",
 }

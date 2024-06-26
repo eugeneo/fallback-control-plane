@@ -18,7 +18,7 @@ package grpc.testing.xdsconfig;
 
 option go_package = "grpc/interop/grpc_testing/xdsconfig";
 
-import "control.proto";
+import "protos/grpc/testing/xdsconfig/control.proto";
 
 service XdsConfigControlService {
   rpc StopOnRequest(StopOnRequestRequest) returns (StopOnRequestResponse);

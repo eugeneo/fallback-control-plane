@@ -18,10 +18,8 @@ package grpc.testing.xdsconfig;
 
 option go_package = "grpc/interop/grpc_testing/xdsconfig";
 
-service XdsConfigControlService {
-  rpc StopOnRequest(StopOnRequestRequest) returns (StopOnRequestResponse);
-  rpc UpsertResources(UpsertResourcesRequest) returns (UpsertResourcesResponse);
-};
+import "google/protobuf/any.proto";
+
 
 message StopOnRequestRequest {
   string resource_type = 1;
@@ -44,4 +42,6 @@ message UpsertResourcesRequest {
   uint32 upstream_port = 4;
 };
 
-message UpsertResourcesResponse {};
+message UpsertResourcesResponse {
+  repeated google.protobuf.Any resource = 1;
+};
