@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	channelz "google.golang.org/grpc/channelz/service"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
@@ -129,6 +130,7 @@ func RunServer(srv server.Server, controlService cs.XdsConfigControlServiceServe
 	)
 	grpcServer := grpc.NewServer(grpcOptions...)
 	reflection.Register(grpcServer)
+	channelz.RegisterChannelzServiceToServer(grpcServer)
 	cs.RegisterXdsConfigControlServiceServer(grpcServer, controlService)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
